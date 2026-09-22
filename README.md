@@ -4,7 +4,7 @@
 
 Drop is one fast capture edge for the Wiki raw corpus. It accepts a link, text, or one file with an optional note. It writes one immutable capture bundle and returns immediately.
 
-Drop does not fetch, classify, summarize, browse, or route work. Later Wiki and Hound workflows consume the raw record.
+Capture does not fetch, classify, summarize, browse, or route work. The explicit `enrich.js` action can acquire public context for one captured link through Treg. It writes one create-only `enriched.md` sidecar. GiveCare BB invokes this owner-native action only when the operator selects **Get source context**.
 
 ## Surfaces
 
@@ -34,10 +34,11 @@ Each capture is a create-only bundle under `CAPTURE_DIR`:
 ```text
 YYYY-MM-DD-<content-hash>-<title>/
 ├── capture.md
+├── enriched.md        # only after explicit source acquisition
 └── <attachment>       # only for file captures
 ```
 
-Exact same-day retries return the first receipt without rewriting it. Drop stores no database, feed, mutable link file, or generated catalog.
+Exact same-day retries return the first receipt without rewriting it. Enrichment never rewrites `capture.md` or an existing sidecar. Drop stores no database, feed, mutable link file, or generated catalog.
 
 Production mounts `CAPTURE_DIR` at `/home/deploy/wiki/raw/library/captures`.
 
@@ -57,6 +58,14 @@ Multipart form data accepts `content`, `file`, `title`, `note`, and `channel`. O
 ## Verify
 
 ```sh
-node --test test/server.test.js
+node --test test/*.test.js
 docker build -t drop-test .
 ```
+
+Run one explicit enrichment with the canonical capture root:
+
+```sh
+CAPTURE_DIR=/home/deploy/wiki/raw/library/captures ./enrich.js <capture-id>
+```
+
+The LinkedIn routed call is capped at $0.005. TikTok and X use fixed-cost post-detail endpoints. Generic pages request text only.
