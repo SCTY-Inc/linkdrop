@@ -4,7 +4,7 @@
 
 Drop is one fast capture edge for the Wiki raw corpus. It accepts a link, text, or one file with an optional note. It writes one immutable capture bundle and returns immediately.
 
-Capture does not fetch, classify, summarize, browse, or route work. The explicit `enrich.js` action can acquire public context for one captured link through Treg. It writes one create-only `enriched.md` sidecar. GiveCare BB invokes this owner-native action only when the operator selects **Get source context**.
+Capture does not fetch, classify, summarize, browse, or route work. The `enrich.js` action acquires public context for one captured link through Treg and writes one create-only `enriched.md` sidecar. GiveCare BB invokes this owner-native action before it asks Jev to judge an input. **Get source context** retries a failed acquisition.
 
 ## Surfaces
 

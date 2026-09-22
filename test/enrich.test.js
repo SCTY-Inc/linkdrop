@@ -49,6 +49,7 @@ test("writes one source-derived enrichment sidecar and preserves the raw capture
       captureDir: root,
       id,
       runTreg,
+      resolveUrl: async () => "https://www.linkedin.com/posts/example-123",
       now: () => new Date("2026-09-22T12:00:00Z"),
     });
 
@@ -58,6 +59,8 @@ test("writes one source-derived enrichment sidecar and preserves the raw capture
       path: `${id}/enriched.md`,
     });
     assert.equal(calls.length, 1);
+    assert.match(calls[0].args.join(" "), /https:\/\/www\.linkedin\.com\/posts\/example-123/);
+    assert.doesNotMatch(calls[0].args.join(" "), /lnkd\.in/);
     const enriched = await readFile(path.join(root, id, "enriched.md"), "utf8");
     assert.match(enriched, /title: "Employers are building care infrastructure"/);
     assert.match(enriched, /description: "A coalition of employers will test a caregiver support model in three regions\."/);
@@ -66,7 +69,7 @@ test("writes one source-derived enrichment sidecar and preserves the raw capture
     assert.match(enriched, /A coalition of employers will test a caregiver support model/);
     assert.doesNotMatch(await readFile(path.join(root, id, "capture.md"), "utf8"), /Employers are building/);
 
-    const duplicate = await enrichCapture({ captureDir: root, id, runTreg });
+    const duplicate = await enrichCapture({ captureDir: root, id, runTreg, resolveUrl: async (url) => url });
     assert.equal(duplicate.status, "available");
     assert.equal(calls.length, 1);
   } finally {
@@ -78,7 +81,7 @@ test("fails without writing a misleading empty enrichment", async () => {
   const { root, id } = await fixture("https://lnkd.in/p/missing");
   try {
     await assert.rejects(
-      enrichCapture({ captureDir: root, id, runTreg: async () => ({ output: { post: null } }) }),
+      enrichCapture({ captureDir: root, id, runTreg: async () => ({ output: { post: null } }), resolveUrl: async (url) => url }),
       /No public source context was returned/,
     );
     await assert.rejects(readFile(path.join(root, id, "enriched.md"), "utf8"), { code: "ENOENT" });

@@ -8,6 +8,7 @@ const path = require("node:path");
 const execFileAsync = promisify(execFile);
 const DEFAULT_CAPTURE_DIR = "/home/deploy/wiki/raw/library/captures";
 const DEFAULT_TREG_BIN = "/home/deploy/.local/bin/treg";
+const USER_AGENT = "OpenAI File Downloader, XaiImageApiFetch/1.0";
 
 function fields(markdown) {
   if (!markdown.startsWith("---\n")) return {};
@@ -201,7 +202,19 @@ async function defaultRunTreg(endpoint, args) {
   return JSON.parse(stdout);
 }
 
-async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, now = () => new Date() }) {
+async function defaultResolveUrl(url) {
+  if (new URL(url).hostname.toLowerCase() !== "lnkd.in") return url;
+  const response = await fetch(url, {
+    method: "HEAD",
+    redirect: "follow",
+    headers: { "user-agent": USER_AGENT },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error(`LinkedIn short link returned ${response.status}`);
+  return response.url;
+}
+
+async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, resolveUrl = defaultResolveUrl, now = () => new Date() }) {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(id) || id.includes("..")) throw new Error("Invalid capture id");
   const bundle = path.join(captureDir, id);
   const enrichedPath = path.join(bundle, "enriched.md");
@@ -214,9 +227,10 @@ async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, now = (
   const capture = fields(await fs.readFile(path.join(bundle, "capture.md"), "utf8"));
   const url = typeof capture.url === "string" ? capture.url : "";
   if (!url) throw new Error("Capture has no public URL");
-  const plan = enrichmentPlan(url);
+  const resolvedUrl = await resolveUrl(url);
+  const plan = enrichmentPlan(resolvedUrl);
   const payload = await runTreg(plan.endpoint, plan.args);
-  const context = normalize(plan, payload, url);
+  const context = normalize(plan, payload, resolvedUrl);
   if (!context?.body) throw new Error("No public source context was returned");
   await fs.writeFile(enrichedPath, enrichmentRecord(context, now().toISOString()), { flag: "wx", mode: 0o600 });
   return { status: "enriched", extractor: context.extractor, path: `${id}/enriched.md` };
