@@ -68,4 +68,4 @@ Run one explicit enrichment with the canonical capture root:
 CAPTURE_DIR=/home/deploy/wiki/raw/library/captures ./enrich.js <capture-id>
 ```
 
-The LinkedIn routed call is capped at $0.005. TikTok and X use fixed-cost post-detail endpoints. Generic pages request text only.
+The LinkedIn routed call is capped at $0.005. TikTok and X use fixed-cost post-detail endpoints. When X returns only a `t.co` article wrapper, enrichment retrieves the article body through the canonical `x-search.sh article` command before writing `enriched.md`. Generic pages request text only.

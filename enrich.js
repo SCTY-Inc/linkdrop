@@ -8,6 +8,7 @@ const path = require("node:path");
 const execFileAsync = promisify(execFile);
 const DEFAULT_CAPTURE_DIR = "/home/deploy/wiki/raw/library/captures";
 const DEFAULT_TREG_BIN = "/home/deploy/.local/bin/treg";
+const DEFAULT_X_SEARCH_BIN = "/home/deploy/agents/scripts/x-twitter/x-search.sh";
 const USER_AGENT = "OpenAI File Downloader, XaiImageApiFetch/1.0";
 
 function fields(markdown) {
@@ -138,7 +139,13 @@ function normalizeTikTok(payload, url) {
 
 function normalizeX(payload, url) {
   const tweet = asObject(payload.tweet ?? payload.data ?? payload);
-  const body = textAt(tweet, [["text"], ["full_text"], ["legacy", "full_text"]]);
+  const body = textAt(tweet, [
+    ["article", "plain_text"],
+    ["note_tweet", "text"],
+    ["text"],
+    ["full_text"],
+    ["legacy", "full_text"],
+  ]);
   if (!body) return null;
   const author = textAt(tweet, [["author", "name"], ["user", "name"], ["core", "user_results", "result", "legacy", "name"]]);
   return {
@@ -172,6 +179,22 @@ function normalizeWeb(payload, url) {
   };
 }
 
+function normalizeXArticle(output, fallback, url) {
+  const match = output.match(/=== Article Content ===\s*\n([\s\S]*?)\n=== End Article ===/);
+  const body = match?.[1]?.trim() || "";
+  if (!body) return null;
+  const author = output.match(/^@([^\s]+)/m)?.[1];
+  return {
+    title: body.split("\n").map((line) => line.trim()).find(Boolean) || "X Article",
+    description: excerpt(body),
+    body,
+    author: fallback.author || (author ? `@${author}` : ""),
+    resolvedUrl: url,
+    engagement: fallback.engagement,
+    extractor: "x-twitter.article",
+  };
+}
+
 function normalize(plan, payload, url) {
   if (plan.endpoint === "treg.linkedin.post.detail") return normalizeLinkedIn(payload, url);
   if (plan.endpoint === "scrapecreators.tiktok.video.detail") return normalizeTikTok(payload, url);
@@ -202,6 +225,14 @@ async function defaultRunTreg(endpoint, args) {
   return JSON.parse(stdout);
 }
 
+async function defaultRunXArticle(tweetId) {
+  const { stdout } = await execFileAsync(process.env.X_SEARCH_BIN || DEFAULT_X_SEARCH_BIN, ["article", tweetId], {
+    timeout: 30_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  return stdout;
+}
+
 async function defaultResolveUrl(url) {
   if (new URL(url).hostname.toLowerCase() !== "lnkd.in") return url;
   const response = await fetch(url, {
@@ -214,7 +245,7 @@ async function defaultResolveUrl(url) {
   return response.url;
 }
 
-async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, resolveUrl = defaultResolveUrl, now = () => new Date() }) {
+async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, runXArticle = defaultRunXArticle, resolveUrl = defaultResolveUrl, now = () => new Date() }) {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(id) || id.includes("..")) throw new Error("Invalid capture id");
   const bundle = path.join(captureDir, id);
   const enrichedPath = path.join(bundle, "enriched.md");
@@ -230,7 +261,12 @@ async function enrichCapture({ captureDir, id, runTreg = defaultRunTreg, resolve
   const resolvedUrl = await resolveUrl(url);
   const plan = enrichmentPlan(resolvedUrl);
   const payload = await runTreg(plan.endpoint, plan.args);
-  const context = normalize(plan, payload, resolvedUrl);
+  let context = normalize(plan, payload, resolvedUrl);
+  if (plan.endpoint === "scrapecreators.x.v1-twitter-tweet" && /^https:\/\/t\.co\/\S+$/.test(context?.body?.trim() || "")) {
+    const tweetId = new URL(resolvedUrl).pathname.match(/\/status\/(\d+)/)?.[1];
+    if (!tweetId) throw new Error("X Article wrapper has no tweet id");
+    context = normalizeXArticle(await runXArticle(tweetId), context, resolvedUrl);
+  }
   if (!context?.body) throw new Error("No public source context was returned");
   await fs.writeFile(enrichedPath, enrichmentRecord(context, now().toISOString()), { flag: "wx", mode: 0o600 });
   return { status: "enriched", extractor: context.extractor, path: `${id}/enriched.md` };

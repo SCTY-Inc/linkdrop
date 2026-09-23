@@ -77,6 +77,47 @@ test("writes one source-derived enrichment sidecar and preserves the raw capture
   }
 });
 
+test("unwraps an X Article instead of accepting its URL-only wrapper as context", async () => {
+  const { root, id } = await fixture("https://x.com/emmettshine/status/2102427763663646852");
+  const articleCalls = [];
+  try {
+    const receipt = await enrichCapture({
+      captureDir: root,
+      id,
+      runTreg: async () => ({
+        tweet: {
+          text: "https://t.co/UE2pwvuFyR",
+          author: { name: "Emmett Shine" },
+          public_metrics: { like_count: 27 },
+        },
+      }),
+      resolveUrl: async (url) => url,
+      runXArticle: async (tweetId) => {
+        articleCalls.push(tweetId);
+        return [
+          "@emmettshine (9h ago)",
+          "https://t.co/UE2pwvuFyR",
+          "",
+          "=== Article Content ===",
+          "10 tips for new founders raising capital.",
+          "The first material paragraph.",
+          "=== End Article ===",
+        ].join("\n");
+      },
+      now: () => new Date("2026-09-23T01:00:00Z"),
+    });
+
+    assert.equal(receipt.extractor, "x-twitter.article");
+    assert.deepEqual(articleCalls, ["2102427763663646852"]);
+    const enriched = await readFile(path.join(root, id, "enriched.md"), "utf8");
+    assert.match(enriched, /title: "10 tips for new founders raising capital\."/);
+    assert.match(enriched, /The first material paragraph\./);
+    assert.doesNotMatch(enriched, /^https:\/\/t\.co\/UE2pwvuFyR$/m);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("fails without writing a misleading empty enrichment", async () => {
   const { root, id } = await fixture("https://lnkd.in/p/missing");
   try {
