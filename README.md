@@ -17,7 +17,7 @@ curl -X POST localhost:18790/links -H 'content-type: application/json' \
   -d '{"content":"https://example.com","title":"Example"}'
 ```
 
-Each capture lands as a bundle under `./captures/`. With Docker: `docker build -t drop .` then `docker run -p 18790:18790 -v "$PWD/captures:/raw" drop`. Note the server binds `0.0.0.0`; keep it behind a private network (the docs below assume Tailscale).
+Each capture lands as a bundle under `./captures/`. The server binds `0.0.0.0`; keep it behind a private network (the docs below assume Tailscale). A `Dockerfile` and `docker-compose.yml` are included for deployment.
 
 Tests: `node --test test/*.test.js`.
 
