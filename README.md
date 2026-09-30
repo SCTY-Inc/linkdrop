@@ -6,6 +6,21 @@ Drop is one fast capture edge for the Wiki raw corpus. It accepts a link, text, 
 
 Capture does not fetch, classify, summarize, browse, or route work. The `enrich.js` action acquires public context for one captured link through Treg and writes one create-only `enriched.md` sidecar. GiveCare BB invokes this owner-native action before it asks Jev to judge an input. **Get source context** retries a failed acquisition.
 
+## Quick start
+
+Requires Node 22+. No dependencies, no `npm install`.
+
+```sh
+CAPTURE_DIR=./captures PORT=18790 node server.js
+curl localhost:18790/health
+curl -X POST localhost:18790/links -H 'content-type: application/json' \
+  -d '{"content":"https://example.com","title":"Example"}'
+```
+
+Each capture lands as a bundle under `./captures/`. With Docker: `docker build -t drop .` then `docker run -p 18790:18790 -v "$PWD/captures:/raw" drop`. Note the server binds `0.0.0.0`; keep it behind a private network (the docs below assume Tailscale).
+
+Tests: `node --test test/*.test.js`.
+
 ## Surfaces
 
 - Web form: `http://atum-vps.tail6bb091.ts.net:18790/`
