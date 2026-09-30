@@ -344,7 +344,7 @@ if (require.main === module) {
     captureDir: process.env.CAPTURE_DIR || "/raw",
   });
   server.listen(port, "0.0.0.0", () => {
-    console.log(`Drop listening on http://127.0.0.1:${port}`);
+    console.log(`Drop listening on http://0.0.0.0:${port}`);
     console.log(`Capture directory: ${process.env.CAPTURE_DIR || "/raw"}`);
   });
 }
