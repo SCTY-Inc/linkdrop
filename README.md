@@ -47,7 +47,9 @@ Same-day exact retries return the first receipt. Nothing is rewritten.
 CAPTURE_DIR=./captures ./enrich.js <capture-id>
 ```
 
-Needs the `treg` CLI (`TREG_BIN`) and, for X articles, `x-search.sh` (`X_SEARCH_BIN`).
+Needs only the `treg` CLI (`TREG_BIN`). X posts and full X article text use the
+TikHub tweet-detail endpoint through treg. Article previews and URL-only wrappers
+fail without writing a misleading enrichment. Existing sidecars are never overwritten.
 
 ## Test
 
