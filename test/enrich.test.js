@@ -23,7 +23,20 @@ test("selects bounded platform acquisition instead of hand-written scraping", ()
     args: ["--method", "POST", "--data", JSON.stringify({ url: "https://lnkd.in/p/example" }), "--header", "X-Treg-Route-Max-Cost: 0.005"],
   });
   assert.equal(enrichmentPlan("https://www.tiktok.com/t/example").endpoint, "scrapecreators.tiktok.video.detail");
-  assert.equal(enrichmentPlan("https://x.com/example/status/1").endpoint, "scrapecreators.x.v1-twitter-tweet");
+  assert.deepEqual(enrichmentPlan("https://x.com/example/status/1?s=46"), {
+    endpoint: "tikhub.x.twitter-web-fetch-tweet-detail",
+    args: ["--query", "tweet_id=1"],
+  });
+  for (const url of [
+    "https://x.com/i/web/status/1",
+    "https://twitter.com/example/status/1/photo/2",
+    "https://x.com/example/status/1/video/1?s=46",
+  ]) {
+    assert.deepEqual(enrichmentPlan(url), {
+      endpoint: "tikhub.x.twitter-web-fetch-tweet-detail",
+      args: ["--query", "tweet_id=1"],
+    });
+  }
   assert.equal(enrichmentPlan("https://example.com/article").endpoint, "exa.web.contents.get");
 });
 
@@ -77,45 +90,67 @@ test("writes one source-derived enrichment sidecar and preserves the raw capture
   }
 });
 
-test("unwraps an X Article instead of accepting its URL-only wrapper as context", async () => {
-  const { root, id } = await fixture("https://x.com/emmettshine/status/2102427763663646852");
-  const articleCalls = [];
+test("captures the full X article through treg and preserves the raw source", async () => {
+  const { root, id } = await fixture("https://x.com/thorstenball/status/2114386050638336082");
+  const calls = [];
+  const raw = await readFile(path.join(root, id, "capture.md"), "utf8");
   try {
     const receipt = await enrichCapture({
-      captureDir: root,
-      id,
-      runTreg: async () => ({
-        tweet: {
-          text: "https://t.co/UE2pwvuFyR",
-          author: { name: "Emmett Shine" },
-          public_metrics: { like_count: 27 },
-        },
-      }),
-      resolveUrl: async (url) => url,
-      runXArticle: async (tweetId) => {
-        articleCalls.push(tweetId);
-        return [
-          "@emmettshine (9h ago)",
-          "https://t.co/UE2pwvuFyR",
-          "",
-          "=== Article Content ===",
-          "10 tips for new founders raising capital.",
-          "The first material paragraph.",
-          "=== End Article ===",
-        ].join("\n");
+      captureDir: root, id,
+      runTreg: async (endpoint, args) => {
+        calls.push({ endpoint, args });
+        return { code: 200, data: {
+          text: "Finally summarized what I've been sending to friends https://t.co/example",
+          author: { name: "Thorsten Ball" }, likes: 2863,
+          article: {
+            title: "How I work with Agents",
+            preview_text: "Only a preview",
+            full_text: "The first material paragraph.\n\nThe final material paragraph.",
+          },
+        } };
       },
-      now: () => new Date("2026-09-23T01:00:00Z"),
+      resolveUrl: async (url) => url,
     });
-
-    assert.equal(receipt.extractor, "x-twitter.article");
-    assert.deepEqual(articleCalls, ["2102427763663646852"]);
+    assert.equal(receipt.extractor, "tikhub.x.twitter-web-fetch-tweet-detail");
+    assert.deepEqual(calls, [{
+      endpoint: "tikhub.x.twitter-web-fetch-tweet-detail",
+      args: ["--query", "tweet_id=2114386050638336082"],
+    }]);
     const enriched = await readFile(path.join(root, id, "enriched.md"), "utf8");
-    assert.match(enriched, /title: "10 tips for new founders raising capital\."/);
-    assert.match(enriched, /The first material paragraph\./);
-    assert.doesNotMatch(enriched, /^https:\/\/t\.co\/UE2pwvuFyR$/m);
-  } finally {
-    await rm(root, { recursive: true, force: true });
+    assert.match(enriched, /title: "How I work with Agents"/);
+    assert.match(enriched, /The first material paragraph\.\n\nThe final material paragraph\./);
+    assert.match(enriched, /2863 likes/);
+    assert.doesNotMatch(enriched, /Only a preview|Finally summarized/);
+    assert.equal(await readFile(path.join(root, id, "capture.md"), "utf8"), raw);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("rejects X article previews and URL-only wrappers without creating a sidecar", async () => {
+  for (const data of [
+    { text: "Read my article https://t.co/example", article: { title: "Article", preview_text: "Only a preview" } },
+    { text: "https://t.co/example" },
+  ]) {
+    const { root, id } = await fixture("https://twitter.com/example/status/123");
+    try {
+      await assert.rejects(enrichCapture({
+        captureDir: root, id, runTreg: async () => ({ code: 200, data }),
+        resolveUrl: async (url) => url,
+      }), /No public source context was returned/);
+      await assert.rejects(readFile(path.join(root, id, "enriched.md"), "utf8"), { code: "ENOENT" });
+    } finally { await rm(root, { recursive: true, force: true }); }
   }
+});
+
+test("captures ordinary X posts through the same treg route", async () => {
+  const { root, id } = await fixture("https://x.com/example/status/123");
+  try {
+    await enrichCapture({
+      captureDir: root, id,
+      runTreg: async () => ({ code: 200, data: { text: "An ordinary complete post.", author: { name: "Example" } } }),
+      resolveUrl: async (url) => url,
+    });
+    assert.match(await readFile(path.join(root, id, "enriched.md"), "utf8"), /An ordinary complete post\./);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("fails without writing a misleading empty enrichment", async () => {
