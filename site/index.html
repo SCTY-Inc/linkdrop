@@ -34,9 +34,9 @@
     <h2 id="file-title">The file is the database</h2>
     <p>Each capture is its own folder. The folder holds one <code>capture.md</code> with YAML frontmatter, plus the attachment if you sent a file. There are no accounts and no sync. linkdrop writes a capture once and never rewrites it. If you send the same capture again on the same day, you get the first receipt back.</p>
     <figure>
-      <pre tabindex="0" aria-label="Capture folder layout">captures/
-└── 2026-11-15-e2c51e5084b1-example/
-    └── capture.md</pre>
+      <pre tabindex="0" aria-label="Quickstart commands">git clone https://github.com/SCTY-Inc/linkdrop &amp;&amp; cd linkdrop
+CAPTURE_DIR=~/linkdrop-inbox node server.js
+curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com"}'</pre>
       <pre tabindex="0" aria-label="Example capture.md">---
 title: "Example"
 type: "source"
@@ -64,7 +64,7 @@ url: "https://example.com/"
     <pre tabindex="0" aria-label="Quickstart commands">CAPTURE_DIR=./captures PORT=18790 node server.js
 curl localhost:18790/health
 curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com","title":"Example"}'</pre>
-    <p class="small">Requires Node 22 or later. Run it from a clone of the repo. The server has no authentication, so keep it on a private network. For a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
+    <p class="small">Requires Node 22 or later. The server has no authentication, so keep it on a private network. For a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
   </section>
 
   <section aria-labelledby="why-title">
@@ -77,7 +77,7 @@ curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"con
 
   <section aria-labelledby="delete-title">
     <h2 id="delete-title">If you delete it tomorrow, you lose nothing</h2>
-    <p>Your captures are plain files in <code>CAPTURE_DIR</code>. linkdrop does not need to run for you to read, grep, move or back them up. Keep that folder outside the repo clone. The quickstart writes to <code>./captures</code> inside the clone, so delete the clone and you delete the captures with it.</p>
+    <p>Your captures are plain files in <code>CAPTURE_DIR</code>. linkdrop does not need to run for you to read, grep, move or back them up. The quickstart keeps them in <code>~/linkdrop-inbox</code>, outside the clone, so deleting linkdrop leaves them in place.</p>
   </section>
 
   <footer>
