@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<title>linkdrop · SCTY Lab</title>
+<meta name="description" content="A link inbox for humans and agents. Share a link, get a markdown file, read it with any tool. Zero dependencies.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <nav>
+    <span class="brand"><img src="icon.svg" alt="" width="28" height="28">linkdrop</span>
+    <a href="https://github.com/SCTY-Inc/linkdrop">GitHub ↗</a>
+  </nav>
+
+  <header class="hero">
+    <p class="meta">SCTY Lab · Draft</p>
+    <h1>A link inbox for humans and agents.</h1>
+    <p class="lede">Share a link from your phone. linkdrop writes it to disk as a markdown file and answers with a JSON receipt. Any person, script or agent that can read a folder can read your inbox.</p>
+    <a class="button" href="https://github.com/SCTY-Inc/linkdrop">View on GitHub ↗</a>
+  </header>
+
+  <section aria-labelledby="file-title">
+    <h2 id="file-title">The file is the database</h2>
+    <p>Each capture is its own folder. The folder holds one <code>capture.md</code> with YAML frontmatter, plus the attachment if you sent a file. There are no accounts and no sync. linkdrop writes a capture once and never rewrites it. If you send the same capture again on the same day, you get the first receipt back.</p>
+    <figure>
+      <pre tabindex="0" aria-label="Capture folder layout">captures/
+└── 2026-11-15-e2c51e5084b1-example/
+    └── capture.md</pre>
+      <pre tabindex="0" aria-label="Example capture.md">---
+title: "Example"
+type: "source"
+status: "raw"
+privacy_tier: "private"
+source_type: "link"
+captured_at: "2026-11-15T15:55:25.559Z"
+channel: "ios-share-sheet"
+content_sha256: "e2c51e5084b1…"
+url: "https://example.com/"
+---
+
+# Example
+
+## Source
+
+&lt;https://example.com/&gt;</pre>
+      <figcaption>A real capture from the quickstart below. The hash is shortened here.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="start-title">
+    <h2 id="start-title">Quickstart</h2>
+    <p>Zero dependencies. The server is one file that uses only Node's built-in modules. There is no install step.</p>
+    <pre tabindex="0" aria-label="Quickstart commands">CAPTURE_DIR=./captures PORT=18790 node server.js
+curl localhost:18790/health
+curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com","title":"Example"}'</pre>
+    <p class="small">Requires Node 22 or later. Run it from a clone of the repo. The server has no authentication, so keep it on a private network. For a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
+  </section>
+
+  <section aria-labelledby="why-title">
+    <h2 id="why-title">Why</h2>
+    <p class="question">Where should a link go when you are not ready to read it, and you want an agent to read it later?</p>
+    <p>Read-later apps keep links behind an account and a sync service. An agent can read a folder of markdown with no setup, so the inbox should be that folder.</p>
+    <p>So linkdrop does one thing. It takes a link, some text or one file, writes it down and returns. Capture does not fetch the page or summarize it. A separate script, <code>enrich.js</code>, can fetch public context for one capture later. It writes an <code>enriched.md</code> next to the original and never overwrites one that exists.</p>
+    <p>Enrichment is where it failed. Long X articles were the hard case, and it took two fixes before <code>enrich.js</code> saved the full article text. When it gets only a preview now, it writes nothing, so a reader who finds no <code>enriched.md</code> knows to open the link.</p>
+  </section>
+
+  <section aria-labelledby="delete-title">
+    <h2 id="delete-title">If you delete it tomorrow, you lose nothing</h2>
+    <p>Your captures are plain files in <code>CAPTURE_DIR</code>. linkdrop does not need to run for you to read, grep, move or back them up. Keep that folder outside the repo clone. The quickstart writes to <code>./captures</code> inside the clone, so delete the clone and you delete the captures with it.</p>
+  </section>
+
+  <footer>
+    <span>MIT license · © 2026 SCTY, Inc</span>
+    <a href="https://github.com/SCTY-Inc/linkdrop">GitHub ↗</a>
+    <a href="https://scty.org/lab">SCTY Lab ↗</a>
+  </footer>
+</main>
+</body>
+</html>
