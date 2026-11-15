@@ -34,9 +34,9 @@
     <h2 id="file-title">The file is the database</h2>
     <p>Each capture is its own folder. The folder holds one <code>capture.md</code> with YAML frontmatter, plus the attachment if you sent a file. There are no accounts and no sync. linkdrop writes a capture once and never rewrites it. If you send the same capture again on the same day, you get the first receipt back.</p>
     <figure>
-      <pre tabindex="0" aria-label="Quickstart commands">git clone https://github.com/SCTY-Inc/linkdrop &amp;&amp; cd linkdrop
-CAPTURE_DIR=~/linkdrop-inbox node server.js
-curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com"}'</pre>
+      <pre tabindex="0" aria-label="Capture folder layout">linkdrop-inbox/
+└── 2026-11-15-e2c51e5084b1-example/
+    └── capture.md</pre>
       <pre tabindex="0" aria-label="Example capture.md">---
 title: "Example"
 type: "source"
@@ -61,9 +61,9 @@ url: "https://example.com/"
   <section aria-labelledby="start-title">
     <h2 id="start-title">Quickstart</h2>
     <p>Zero dependencies. The server is one file that uses only Node's built-in modules. There is no install step.</p>
-    <pre tabindex="0" aria-label="Quickstart commands">CAPTURE_DIR=./captures PORT=18790 node server.js
-curl localhost:18790/health
-curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com","title":"Example"}'</pre>
+    <pre tabindex="0" aria-label="Quickstart commands">git clone https://github.com/SCTY-Inc/linkdrop &amp;&amp; cd linkdrop
+CAPTURE_DIR=~/linkdrop-inbox node server.js
+curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com"}'</pre>
     <p class="small">Requires Node 22 or later. The server has no authentication, so keep it on a private network. For a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
   </section>
 
