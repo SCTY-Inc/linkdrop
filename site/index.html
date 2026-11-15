@@ -4,17 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
-<title>linkdrop · SCTY Lab</title>
-<meta name="description" content="A link inbox for humans and agents. Share a link, get a markdown file, read it with any tool. Zero dependencies.">
+<title>linkdrop: a link inbox for humans and agents · SCTY Lab</title>
+<meta name="description" content="linkdrop is a self-hosted link inbox. Share a link from your phone and it saves a markdown file that you or an agent can read later.">
 <link rel="canonical" href="https://link.scty.org/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SCTY Lab">
-<meta property="og:title" content="linkdrop">
-<meta property="og:description" content="A link inbox for humans and agents. Share a link, get a markdown file, read it with any tool. Zero dependencies.">
+<meta property="og:title" content="linkdrop: a link inbox for humans and agents">
+<meta property="og:description" content="linkdrop is a self-hosted link inbox. Share a link from your phone and it saves a markdown file that you or an agent can read later.">
 <meta property="og:url" content="https://link.scty.org/">
+<meta property="og:image" content="https://link.scty.org/apple-touch-icon.png">
+<meta property="og:image:alt" content="linkdrop icon">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linkdrop: a link inbox for humans and agents">
+<meta name="twitter:description" content="linkdrop is a self-hosted link inbox. Share a link from your phone and it saves a markdown file that you or an agent can read later.">
+<meta name="twitter:image" content="https://link.scty.org/apple-touch-icon.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
 <link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "linkdrop",
+  "url": "https://link.scty.org/",
+  "description": "linkdrop is a self-hosted link inbox. Share a link from your phone and it saves a markdown file that you or an agent can read later.",
+  "applicationCategory": "DeveloperApplication",
+  "softwareRequirements": "Node.js 22 or later",
+  "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "image": "https://link.scty.org/apple-touch-icon.png",
+  "sameAs": ["https://github.com/SCTY-Inc/linkdrop"],
+  "publisher": { "@type": "Organization", "name": "SCTY", "url": "https://scty.org" }
+}
+</script>
 </head>
 <body>
 <main>
@@ -24,32 +48,32 @@
   </nav>
 
   <header class="hero">
-    <p class="meta">SCTY Lab</p>
+    <p class="meta"><a href="https://scty.org/lab">SCTY Lab</a></p>
     <h1>A link inbox for humans and agents.</h1>
-    <p class="lede">Share a link from your phone. linkdrop writes it to disk as a markdown file and answers with a JSON receipt. Any person, script or agent that can read a folder can read your inbox.</p>
+    <p class="lede">linkdrop is a small server you run yourself that saves the links you share from your phone as markdown files, for you and your agents to read later. Each capture goes to disk, and the server answers with a JSON receipt. Anything that can read a folder can read the inbox.</p>
     <a class="button" href="https://github.com/SCTY-Inc/linkdrop">View on GitHub</a>
   </header>
 
   <section aria-labelledby="file-title">
     <h2 id="file-title">The file is the database</h2>
-    <p>Each capture is its own folder. The folder holds one <code>capture.md</code> with YAML frontmatter, plus the attachment if you sent a file. There are no accounts and no sync. linkdrop writes a capture once and never rewrites it. If you send the same capture again on the same day, you get the first receipt back.</p>
+    <p>Each capture is its own folder. The folder holds one <code>capture.md</code> with YAML frontmatter, plus the attachment if you sent a file. linkdrop writes a capture once and never rewrites it. If you send the same capture again on the same day, you get the first receipt back.</p>
     <figure>
       <pre tabindex="0" aria-label="Capture folder layout">linkdrop-inbox/
-└── 2026-11-15-e2c51e5084b1-example/
+└── 2026-11-15-a72b577b4042-example-com/
     └── capture.md</pre>
       <pre tabindex="0" aria-label="Example capture.md">---
-title: "Example"
+title: "example.com"
 type: "source"
 status: "raw"
 privacy_tier: "private"
 source_type: "link"
-captured_at: "2026-11-15T15:55:25.559Z"
+captured_at: "2026-11-15T18:43:47.843Z"
 channel: "ios-share-sheet"
-content_sha256: "e2c51e5084b1…"
+content_sha256: "a72b577b4042…"
 url: "https://example.com/"
 ---
 
-# Example
+# example.com
 
 ## Source
 
@@ -60,19 +84,19 @@ url: "https://example.com/"
 
   <section aria-labelledby="start-title">
     <h2 id="start-title">Quickstart</h2>
-    <p>Zero dependencies. The server is one file that uses only Node's built-in modules. There is no install step.</p>
+    <p>The server is one file that uses only Node's built-in modules, so there is nothing to install.</p>
     <pre tabindex="0" aria-label="Quickstart commands">git clone https://github.com/SCTY-Inc/linkdrop &amp;&amp; cd linkdrop
 CAPTURE_DIR=~/linkdrop-inbox node server.js
 curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com"}'</pre>
-    <p class="small">Requires Node 22 or later. The server has no authentication, so keep it on a private network. For a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
+    <p class="small">Requires Node 22 or later. Run the <code>curl</code> line in a second terminal. The server has no authentication, so keep it on a private network. To capture from a phone, point an iOS Shortcut at <code>POST /links</code>.</p>
   </section>
 
   <section aria-labelledby="why-title">
     <h2 id="why-title">Why</h2>
     <p class="question">Where should a link go when you are not ready to read it, and you want an agent to read it later?</p>
     <p>Read-later apps keep links behind an account and a sync service. An agent can read a folder of markdown with no setup, so the inbox should be that folder.</p>
-    <p>So linkdrop does one thing. It takes a link, some text or one file, writes it down and returns. Capture does not fetch the page or summarize it. A separate script, <code>enrich.js</code>, can fetch public context for one capture later. It writes an <code>enriched.md</code> next to the original and never overwrites one that exists.</p>
-    <p>Enrichment is where it failed. Long X articles were the hard case, and it took two fixes before <code>enrich.js</code> saved the full article text. When it gets only a preview now, it writes nothing, so a reader who finds no <code>enriched.md</code> knows to open the link.</p>
+    <p>Capture takes a link, some text or one file, writes it down and returns. It does not fetch the page or summarize it. A separate script, <code>enrich.js</code>, can fetch public context for one capture later. It writes an <code>enriched.md</code> next to the original and never overwrites one that exists.</p>
+    <p>Enrichment failed first on long X articles. It took two fixes before <code>enrich.js</code> saved the full article text. When it gets only a preview now, it writes nothing, so a reader who finds no <code>enriched.md</code> knows to open the link.</p>
   </section>
 
   <section aria-labelledby="delete-title">

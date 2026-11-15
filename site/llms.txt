@@ -1,0 +1,25 @@
+# linkdrop
+
+> linkdrop is a self-hosted link inbox. Share a link from your phone and it saves a markdown file that you or an agent can read later. Made by SCTY Lab.
+
+- Source: https://github.com/SCTY-Inc/linkdrop (MIT license)
+- Runtime: Node 22 or later. One file, Node built-in modules only.
+- Server: `node server.js`, port 18790 by default (`PORT`). Captures go to `CAPTURE_DIR` (default `/raw`).
+- API: `POST /links` or `POST /capture` with JSON (`url`, `text` or `content`, `title`, `note`, `channel`) or multipart with one file. `GET /health`.
+- Storage: one folder per capture, `YYYY-MM-DD-<content-hash>-<title>/capture.md` with YAML frontmatter. A capture is written once and never rewritten. A same-day exact retry returns the first receipt.
+- Capture does not fetch or summarize the page. `enrich.js <capture-id>` can fetch public context later and writes a create-only `enriched.md`.
+- The server has no authentication. Keep it on a private network.
+
+## Quickstart
+
+```sh
+git clone https://github.com/SCTY-Inc/linkdrop && cd linkdrop
+CAPTURE_DIR=~/linkdrop-inbox node server.js
+# in a second terminal
+curl -X POST localhost:18790/links -H 'content-type: application/json' -d '{"content":"https://example.com"}'
+```
+
+## More
+
+- Page: https://link.scty.org/
+- SCTY Lab: https://scty.org/lab
